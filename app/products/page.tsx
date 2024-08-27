@@ -3,10 +3,16 @@ import AddProduct from "./addProduct";
 import DeleteProduct from "./deleteProduct";
 import UpdateProduct from "./updateProduct";
 import Search from "./search";
+import Pagination from "./pagination";
 const prisma = new PrismaClient();
 
-const getProducts = async (query: string, page: number) => {
+const ITEMS_PER_PAGE = 5;
+
+const getProducts = async (query: string, currentPage: number) => {
+  const offset = (currentPage - 1) * ITEMS_PER_PAGE;
   const res = await prisma.product.findMany({
+    skip: offset,
+    take: ITEMS_PER_PAGE,
     select: {
       id: true,
       title: true,
@@ -28,6 +34,24 @@ const getProducts = async (query: string, page: number) => {
   return res;
 };
 
+const getProductPages = async (query: string) => {
+  const res = await prisma.product.count({
+    where: {
+      OR: [
+        {
+          title: {
+            contains: query,
+            mode: "insensitive",
+          },
+        },
+      ],
+    },
+  });
+  const total_pages = Math.ceil(Number(res) / ITEMS_PER_PAGE);
+
+  return total_pages;
+};
+
 const getBrands = async () => {
   const res = await prisma.brand.findMany();
   return res;
@@ -41,9 +65,10 @@ const ProductPage = async ({
   const query = searchParams?.query || "";
   const page = searchParams?.page || 1;
 
-  const [products, brands] = await Promise.all([
+  const [products, brands, totalPages] = await Promise.all([
     getProducts(query, Number(page)),
     getBrands(),
+    getProductPages(query),
   ]);
 
   return (
@@ -77,6 +102,9 @@ const ProductPage = async ({
           ))}
         </tbody>
       </table>
+      <div className="flex justify-center mt-4">
+        <Pagination totalPages={totalPages} />
+      </div>
     </div>
   );
 };

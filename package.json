@@ -11,6 +11,7 @@
   "dependencies": {
     "@prisma/client": "^5.18.0",
     "axios": "^1.7.5",
+    "clsx": "^2.1.1",
     "daisyui": "^4.12.10",
     "next": "14.2.6",
     "react": "^18",
